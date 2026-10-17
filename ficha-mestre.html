@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciador de Personagens - Filhos do Destino</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0b0e14',
+                        cardBg: '#131924',
+                        cardHover: '#1a2233',
+                        gold: '#d4af37',
+                        goldHover: '#f39c12',
+                        aresRed: '#c0392b',
+                        aresHover: '#e74c3c',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0e14;
+            color: #e2e8f0;
+        }
+        h1, h2, h3, .font-cinzel {
+            font-family: 'Cinzel', serif;
+        }
+        .gold-border {
+            border-color: #d4af37;
+        }
+        .ares-border {
+            border-color: #c0392b;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0e14;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2a3447;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #d4af37;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col lg:flex-row">
+
+    <!-- SIDEBAR DE PERSONAGENS -->
+    <aside id="sidebar" class="w-full lg:w-80 bg-[#131924] border-r border-[#2a3447] flex flex-col z-50 transition-all duration-300">
+        <div class="p-4 border-b border-[#2a3447] flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gold/20 border border-gold flex items-center justify-center text-gold font-bold text-lg font-cinzel">
+                    FD
+                </div>
+                <div>
+                    <h2 class="text-base font-bold text-gold font-cinzel">Filhos do Destino</h2>
+                    <p class="text-[11px] text-gray-400">Gerenciador de Fichas</p>
+                </div>
+            </div>
+            <button onclick="toggleSidebarMobile()" class="lg:hidden text-gray-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <!-- Lista de Personagens -->
+        <div class="p-3 border-b border-[#2a3447] flex flex-col gap-2">
+            <button onclick="createNewCharacter()" class="w-full py-2.5 px-4 bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-white rounded-xl text-sm font-bold shadow transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-user-plus"></i> Novo Personagem
+            </button>
+            <div class="grid grid-cols-2 gap-2 mt-1">
+                <button onclick="exportAllJSON()" class="py-1.5 px-2 bg-[#1a2233] hover:bg-[#25324a] text-gold border border-gold/40 rounded-lg text-xs font-medium transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-download"></i> Exportar Tudo
+                </button>
+                <label class="py-1.5 px-2 bg-[#1a2233] hover:bg-[#25324a] text-gold border border-gold/40 rounded-lg text-xs font-medium transition flex items-center justify-center gap-1.5 cursor-pointer">
+                    <i class="fa-solid fa-upload"></i> Importar
+                    <input type="file" id="importAllFile" accept=".json" onchange="importAllJSON(event)" class="hidden">
+                </label>
+            </div>
+        </div>
+
+        <div id="characterList" class="flex-grow overflow-y-auto p-3 space-y-2">
+            <!-- Gerado via JS -->
+        </div>
+
+        <div class="p-3 border-t border-[#2a3447] text-center text-xs text-gray-500">
+            Salvamento Automático Ativo
+        </div>
+    </aside>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <div class="flex-grow flex flex-col min-h-screen">
+        
+        <!-- HEADER DO PERSONAGEM ATIVO -->
+        <header class="bg-[#131924] border-b border-[#2a3447] sticky top-0 z-40 shadow-xl">
+            <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
+                <div class="flex items-center space-x-3">
+                    <button onclick="toggleSidebarMobile()" class="lg:hidden text-gold text-lg mr-1">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <!-- Avatar Rápido -->
+                    <div class="relative group cursor-pointer" onclick="document.getElementById('avatarInput').click()" title="Clique para alterar a foto de perfil">
+                        <div class="w-12 h-12 rounded-full overflow-hidden border-2 border-gold bg-[#0b0e14] flex items-center justify-center shadow-lg relative">
+                            <img id="headerAvatarImg" src="" alt="Avatar" class="w-full h-full object-cover hidden">
+                            <i id="headerAvatarPlaceholder" class="fa-solid fa-user text-gold text-lg"></i>
+                        </div>
+                        <div class="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-white text-xs">
+                            <i class="fa-solid fa-camera"></i>
+                        </div>
+                    </div>
+                    <input type="file" id="avatarInput" accept="image/*" class="hidden" onchange="uploadAvatar(event)">
+                    
+                    <div>
+                        <h1 class="text-xl font-bold text-gold tracking-wider" id="headerCharName">Novo Personagem</h1>
+                        <p class="text-xs text-gray-400">Filhos do Destino • Ficha Semideus</p>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="openDiceModal()" class="px-3 py-1.5 bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-white rounded-lg text-sm font-semibold shadow transition flex items-center gap-2">
+                        <i class="fa-solid fa-dice"></i> Rolador de Dados
+                    </button>
+                    <button onclick="duplicateCurrentCharacter()" class="px-3 py-1.5 bg-[#1a2233] hover:bg-[#25324a] text-gold border border-gold/40 rounded-lg text-sm font-medium transition flex items-center gap-1.5" title="Duplicar Personagem Atual">
+                        <i class="fa-solid fa-copy"></i> Duplicar
+                    </button>
+                    <button onclick="exportCurrentJSON()" class="px-3 py-1.5 bg-[#1a2233] hover:bg-[#25324a] text-gold border border-gold/40 rounded-lg text-sm font-medium transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-download"></i> Exportar
+                    </button>
+                    <button onclick="deleteCurrentCharacter()" class="px-3 py-1.5 bg-aresRed/20 hover:bg-aresRed/30 text-aresRed border border-aresRed/40 rounded-lg text-sm font-medium transition flex items-center gap-1.5" title="Excluir Personagem">
+                        <i class="fa-solid fa-trash"></i> Excluir
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- NAVEGAÇÃO DE ABAS -->
+        <nav class="bg-[#131924]/80 backdrop-blur border-b border-[#2a3447] sticky top-[65px] z-30">
+            <div class="max-w-7xl mx-auto px-4 flex overflow-x-auto space-x-2 py-2 no-scrollbar">
+                <button onclick="switchTab('geral')" id="btn-tab-geral" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap bg-gold text-darkBg transition shadow">
+                    <i class="fa-solid fa-user mr-1.5"></i> Geral & Atributos
+                </button>
+                <button onclick="switchTab('combate')" id="btn-tab-combate" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap bg-[#1a2233] text-gray-300 hover:text-white hover:bg-[#25324a] transition">
+                    <i class="fa-solid fa-heart-pulse mr-1.5"></i> Combate & Perícias
+                </button>
+                <button onclick="switchTab('habilidades')" id="btn-tab-habilidades" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap bg-[#1a2233] text-gray-300 hover:text-white hover:bg-[#25324a] transition">
+                    <i class="fa-solid fa-bolt mr-1.5"></i> Habilidades & Passivas
+                </button>
+                <button onclick="switchTab('inventario')" id="btn-tab-inventario" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap bg-[#1a2233] text-gray-300 hover:text-white hover:bg-[#25324a] transition">
+                    <i class="fa-solid fa-box-archive mr-1.5"></i> Inventário
+                </button>
+                <button onclick="switchTab('bencaos')" id="btn-tab-bencaos" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap bg-[#1a2233] text-gray-300 hover:text-white hover:bg-[#25324a] transition">
+                    <i class="fa-solid fa-feather mr-1.5"></i> Bênçãos & Fardos
+                </button>
+                <button onclick="switchTab('custom')" id="btn-tab-custom" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap bg-[#1a2233] text-gray-300 hover:text-white hover:bg-[#25324a] transition">
+                    <i class="fa-solid fa-layer-group mr-1.5"></i> Seções Extras
+                </button>
+            </div>
+        </nav>
+
+        <!-- CORPO DA FICHA -->
+        <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
+
+            <!-- TAB 1: GERAL & ATRIBUTOS -->
+            <div id="tab-geral" class="tab-content space-y-6">
+                <!-- Gerenciamento de Avatar na Seção Geral -->
+                <div class="bg-[#131924] border border-[#2a3447] rounded-xl p-5 shadow-lg flex flex-col sm:flex-row items-center gap-6">
+                    <div class="relative group cursor-pointer" onclick="document.getElementById('avatarInputMain').click()">
+                        <div class="w-24 h-24 rounded-2xl overflow-hidden border-2 border-gold bg-[#0b0e14] flex items-center justify-center shadow-2xl relative">
+                            <img id="mainAvatarImg" src="" alt="Avatar" class="w-full h-full object-cover hidden">
+                            <i id="mainAvatarPlaceholder" class="fa-solid fa-user text-gold text-3xl"></i>
+                        </div>
+                        <div class="absolute inset-0 bg-black/60 rounded-2xl flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition text-white text-xs font-semibold gap-1">
+                            <i class="fa-solid fa-camera text-base"></i> Trocar Foto
+                        </div>
+                    </div>
+                    <input type="file" id="avatarInputMain" accept="image/*" class="hidden" onchange="uploadAvatar(event)">
+                    
+                    <div class="flex-grow text-center sm:text-left">
+                        <h2 class="text-lg font-bold text-gold font-cinzel mb-1">Avatar do Personagem</h2>
+                        <p class="text-xs text-gray-400 mb-3">Envie uma imagem do seu dispositivo para personalizar o avatar do seu semideus.</p>
+                        <div class="flex flex-wrap justify-center sm:justify-start gap-2">
+                            <button onclick="document.getElementById('avatarInputMain').click()" class="px-3 py-1.5 bg-gold hover:bg-goldHover text-darkBg rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-upload"></i> Carregar Imagem
+                            </button>
+                            <button onclick="removeAvatar()" class="px-3 py-1.5 bg-aresRed/20 hover:bg-aresRed/30 text-aresRed border border-aresRed/40 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-trash"></i> Remover Foto
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Informações Gerais -->
+                <div class="bg-[#131924] border border-[#2a3447] rounded-xl p-5 shadow-lg">
+                    <div class="flex justify-between items-center mb-4 pb-2 border-b border-[#2a3447]">
+                        <h2 class="text-lg font-bold text-gold flex items-center gap-2">
+                            <i class="fa-solid fa-id-card"></i> Informações Gerais & Dados Físicos
+                        </h2>
+                        <button onclick="addGeneralField()" class="text-xs bg-gold/20 hover:bg-gold/30 text-gold px-2.5 py-1 rounded-md font-medium transition flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> Adicionar Campo
+                        </button>
+                    </div>
+                    <div id="generalFieldsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <!-- Gerado via JS -->
+                    </div>
+                </div>
+
+                <!-- Atributos -->
+                <div class="bg-[#131924] border border-[#2a3447] rounded-xl p-5 shadow-lg">
+                    <div class="flex justify-between items-center mb-4 pb-2 border-b border-[#2a3447]">
+                        <h2 class="text-lg font-bold text-gold flex items-center gap-2">
+                            <i class="fa-solid fa-dumbbell"></i> Atributos
+                        </h2>
+                        <button onclick="addAttribute()" class="text-xs bg-gold/20 hover:bg-gold/30 text-gold px-2.5 py-1 rounded-md font-medium transition flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> Adicionar Atributo
+                        </button>
+                    </div>
+                    <div id="attributesContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        <!-- Gerado via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: COMBATE & PERÍCIAS -->
+            <div id="tab-combate" class="tab-content space-y-6 hidden">
+                <!-- Status de Combate -->
+                <div class="bg-[#131924] border border-[#2a3447] rounded-xl p-5 shadow-lg">
+                    <h2 class="text-lg font-bold text-gold flex items-center gap-2 mb-4 pb-2 border-b border-[#2a3447]">
+                        <i class="fa-solid fa-shield-heart"></i> Status de Combate
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" id="combatStatsGrid">
+                        <!-- Gerado via JS -->
+                    </div>
+
+                    <!-- Testes de Morte -->
+                    <div class="bg-[#0b0e14] p-4 rounded-lg border border-[#2a3447] grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <span class="text-sm font-semibold text-gray-300 block mb-2">Testes de Resistência de Morte - Sucessos:</span>
+                            <div class="flex gap-3" id="deathSuccessContainer">
+                                <!-- Gerado via JS -->
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-sm font-semibold text-gray-300 block mb-2">Testes de Resistência de Morte - Falhas:</span>
+                            <div class="flex gap-3" id="deathFailureContainer">
+                                <!-- Gerado via JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Perícias Selecionadas -->
+                <div class="bg-[#131924] border border-[#2a3447] rounded-xl p-5 shadow-lg">
+                    <div class="flex justify-between items-center mb-4 pb-2 border-b border-[#2a3447]">
+                        <h2 class="text-lg font-bold text-gold flex items-center gap-2">
+                            <i class="fa-solid fa-star"></i> Perícias Selecionadas
+                        </h2>
+                        <button onclick="addSkill()" class="text-xs bg-gold/20 hover:bg-gold/30 text-gold px-2.5 py-1 rounded-md font-medium transition flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> Adicionar Perícia
+                        </button>
+                    </div>
+                    <div id="skillsContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        <!-- Gerado via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: HABILIDADES & PASSIVAS -->
+            <div id="tab-habilidades" class="tab-content space-y-6 hidden">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-gold flex items-center gap-2">
+                        <i class="fa-solid fa-bolt"></i> Habilidades, Passivas & Mecânicas
+                    </h2>
+                    <button onclick="addAbilityModal()" class="px-3 py-1.5 bg-gold hover:bg-goldHover text-darkBg rounded-lg text-sm font-bold shadow transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-plus"></i> Adicionar Habilidade / Card
+                    </button>
+                </div>
+                <div id="abilitiesContainer" class="space-y-4">
+                    <!-- Gerado via JS -->
+                </div>
+            </div>
+
+            <!-- TAB 4: INVENTÁRIO -->
+            <div id="tab-inventario" class="tab-content space-y-6 hidden">
+                <div class="bg-[#131924] border border-[#2a3447] rounded-xl p-5 shadow-lg">
+                    <div class="flex justify-between items-center mb-4 pb-2 border-b border-[#2a3447]">
+                        <h2 class="text-lg font-bold text-gold flex items-center gap-2">
+                            <i class="fa-solid fa-backpack"></i> Inventário & Espaços
+                        </h2>
+                        <button onclick="addInventoryItem()" class="text-xs bg-gold/20 hover:bg-gold/30 text-gold px-2.5 py-1 rounded-md font-medium transition flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> Adicionar Item / Espaço
+                        </button>
+                    </div>
+                    <div id="inventoryContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        <!-- Gerado via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 5: BÊNÇÃOS & FARDOS -->
+            <div id="tab-bencaos" class="tab-content space-y-6 hidden">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-gold flex items-center gap-2">
+                        <i class="fa-solid fa-feather-pointed"></i> Bênçãos & Fardos / Maldições
+                    </h2>
+                    <button onclick="addBlessingModal()" class="px-3 py-1.5 bg-gold hover:bg-goldHover text-darkBg rounded-lg text-sm font-bold shadow transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-plus"></i> Adicionar Bênção / Fardo
+                    </button>
+                </div>
+                <div id="blessingsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Gerado via JS -->
+                </div>
+            </div>
+
+            <!-- TAB 6: SEÇÕES EXTRAS -->
+            <div id="tab-custom" class="tab-content space-y-6 hidden">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-gold flex items-center gap-2">
+                        <i class="fa-solid fa-folder-plus"></i> Seções Personalizadas
+                    </h2>
+                    <button onclick="addCustomSection()" class="px-3 py-1.5 bg-gold hover:bg-goldHover text-darkBg rounded-lg text-sm font-bold shadow transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-plus"></i> Criar Nova Seção
+                    </button>
+                </div>
+                <div id="customSectionsContainer" class="space-y-6">
+                    <!-- Gerado via JS -->
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODAL DE DADOS -->
+    <div id="diceModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-[#131924] border border-gold/40 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onclick="closeDiceModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 class="text-xl font-bold text-gold mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-dice"></i> Rolador de Dados Rápido
+            </h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs text-gray-400 block mb-1">Tipo de Dado</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button onclick="rollDice(20)" class="py-2 bg-[#1a2233] hover:bg-gold hover:text-darkBg border border-[#2a3447] rounded-lg font-bold transition">d20</button>
+                        <button onclick="rollDice(12)" class="py-2 bg-[#1a2233] hover:bg-gold hover:text-darkBg border border-[#2a3447] rounded-lg font-bold transition">d12</button>
+                        <button onclick="rollDice(10)" class="py-2 bg-[#1a2233] hover:bg-gold hover:text-darkBg border border-[#2a3447] rounded-lg font-bold transition">d10</button>
+                        <button onclick="rollDice(8)" class="py-2 bg-[#1a2233] hover:bg-gold hover:text-darkBg border border-[#2a3447] rounded-lg font-bold transition">d8</button>
+                        <button onclick="rollDice(6)" class="py-2 bg-[#1a2233] hover:bg-gold hover:text-darkBg border border-[#2a3447] rounded-lg font-bold transition">d6</button>
+                        <button onclick="rollDice(4)" class="py-2 bg-[#1a2233] hover:bg-gold hover:text-darkBg border border-[#2a3447] rounded-lg font-bold transition">d4</button>
+                        <button onclick="rollDice(100)" class="py-2 bg-[#1a2233] hover:bg-gold hover:text-darkBg border border-[#2a3447] rounded-lg font-bold transition">d100</button>
+                        <button onclick="rollCustomDice()" class="py-2 bg-aresRed/20 hover:bg-aresRed text-aresRed hover:text-white border border-aresRed/40 rounded-lg font-bold transition text-xs">Custom</button>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-400 block mb-1">Modificador numérico</label>
+                    <input type="number" id="diceModifier" value="0" class="w-full bg-[#0b0e14] border border-[#2a3447] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-gold">
+                </div>
+                <div class="bg-[#0b0e14] p-4 rounded-xl border border-[#2a3447] text-center">
+                    <span class="text-xs text-gray-400 block mb-1">Resultado da Rolagem</span>
+                    <div id="diceResult" class="text-3xl font-extrabold text-gold">—</div>
+                    <div id="diceLog" class="text-xs text-gray-500 mt-1">Nenhuma rolagem realizada ainda.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL GENÉRICO -->
+    <div id="genericModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-[#131924] border border-gold/40 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeGenericModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 id="modalTitle" class="text-xl font-bold text-gold mb-4">Adicionar Item</h3>
+            <div id="modalBody" class="space-y-4">
+                <!-- Injetado dinamicamente -->
+            </div>
+            <div class="flex justify-end gap-3 mt-6">
+                <button onclick="closeGenericModal()" class="px-4 py-2 bg-[#1a2233] hover:bg-[#25324a] text-gray-300 rounded-lg text-sm font-semibold transition">Cancelar</button>
+                <button id="modalConfirmBtn" class="px-4 py-2 bg-gold hover:bg-goldHover text-darkBg rounded-lg text-sm font-bold transition">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
+
+    <script>
+        // Estrutura padrão de um personagem novo e vazio
+        function createEmptyCharacter(name = "Novo Personagem") {
+            return {
+                id: 'char_' + Date.now() + Math.random().toString(36).substr(2, 5),
+                avatar: '',
+                general: [
+                    { id: '1', label: 'Nome do Personagem', value: name },
+                    { id: '2', label: 'Jogador', value: '' },
+                    { id: '3', label: 'Nível Semideus', value: '' },
+                    { id: '4', label: 'Nível Armamento', value: '' },
+                    { id: '5', label: 'Chalé / Parente Divino', value: '' },
+                    { id: '6', label: 'Armamentos', value: '' },
+                    { id: '7', label: 'EXP', value: '' },
+                    { id: '8', label: 'Campanha', value: '' },
+                    { id: '9', label: 'Nome Humano', value: '' },
+                    { id: '10', label: 'Idade', value: '' },
+                    { id: '11', label: 'Altura', value: '' },
+                    { id: '12', label: 'Peso', value: '' },
+                    { id: '13', label: 'Cor da Pele', value: '' },
+                    { id: '14', label: 'Cor dos Olhos', value: '' },
+                    { id: '15', label: 'Cor do Cabelo', value: '' },
+                    { id: '16', label: 'Humanidade', value: '' }
+                ],
+                attributes: [
+                    { id: 'attr-1', name: 'Força', value: '0', mod: '+0' },
+                    { id: 'attr-2', name: 'Destreza', value: '0', mod: '+0' },
+                    { id: 'attr-3', name: 'Vigor', value: '0', mod: '+0' },
+                    { id: 'attr-4', name: 'Inteligência', value: '0', mod: '+0' },
+                    { id: 'attr-5', name: 'Carisma', value: '0', mod: '+0' },
+                    { id: 'attr-6', name: 'Aparência', value: '0', mod: '+0' }
+                ],
+                combat: {
+                    vidaMax: 0,
+                    vidaAtual: 0,
+                    vidaTemp: 0,
+                    estaminaMax: 0,
+                    estaminaAtual: 0,
+                    estaminaTemp: 0,
+                    reducaoDano: 0,
+                    aspis: 0,
+                    morteSucessos: [false, false, false],
+                    morteFalhas: [false, false, false]
+                },
+                skills: [],
+                abilities: [],
+                inventory: [],
+                blessings: [],
+                customSections: []
+            };
+        }
+
+        // Estado global com múltiplos personagens
+        let appState = {
+            characters: [],
+            activeCharId: null
+        };
+
+        // Carregar do LocalStorage
+        function loadState() {
+            const saved = localStorage.getItem('filhosDoDestinoMultiState');
+            if (saved) {
+                try {
+                    appState = JSON.parse(saved);
+                } catch(e) {
+                    console.error('Erro ao carregar save', e);
+                }
+            }
+            
+            // Se não houver personagens, cria um inicial
+            if (!appState.characters || appState.characters.length === 0) {
+                const firstChar = createEmptyCharacter("Semideus Principal");
+                appState.characters = [firstChar];
+                appState.activeCharId = firstChar.id;
+                saveState();
+            } else if (!appState.activeCharId || !appState.characters.find(c => c.id === appState.activeCharId)) {
+                appState.activeCharId = appState.characters[0].id;
+            }
+            renderAll();
+        }
+
+        function saveState() {
+            localStorage.setItem('filhosDoDestinoMultiState', JSON.stringify(appState));
+        }
+
+        // Obter personagem ativo atual
+        function getActiveChar() {
+            return appState.characters.find(c => c.id === appState.activeCharId) || appState.characters[0];
+        }
+
+        // Criar Novo Personagem
+        function createNewCharacter() {
+            const charName = prompt("Digite o nome do novo personagem:", "Semideus Sem Nome");
+            if (charName === null) return;
+            const newChar = createEmptyCharacter(charName.trim() !== '' ? charName : "Novo Personagem");
+            appState.characters.push(newChar);
+            appState.activeCharId = newChar.id;
+            saveState();
+            renderAll();
+            showToast(`Personagem "${newChar.general[0].value}" criado!`);
+        }
+
+        // Duplicar Personagem Ativo
+        function duplicateCurrentCharacter() {
+            const current = getActiveChar();
+            const copy = JSON.parse(JSON.stringify(current));
+            copy.id = 'char_' + Date.now() + Math.random().toString(36).substr(2, 5);
+            // Atualizar nome para Cópia
+            const nameField = copy.general.find(g => g.label === 'Nome do Personagem');
+            if(nameField) nameField.value += ' (Cópia)';
+            
+            appState.characters.push(copy);
+            appState.activeCharId = copy.id;
+            saveState();
+            renderAll();
+            showToast('Personagem duplicado com sucesso!');
+        }
+
+        // Excluir Personagem Ativo
+        function deleteCurrentCharacter() {
+            if (appState.characters.length <= 1) {
+                showToast('Você não pode excluir o único personagem restante!');
+                return;
+            }
+            const current = getActiveChar();
+            if (confirm(`Tem certeza que deseja excluir "${current.general[0].value || 'este personagem'}"?`)) {
+                appState.characters = appState.characters.filter(c => c.id !== appState.activeCharId);
+                appState.activeCharId = appState.characters[0].id;
+                saveState();
+                renderAll();
+                showToast('Personagem excluído.');
+            }
+        }
+
+        // Mudar de Personagem
+        function switchCharacter(id) {
+            appState.activeCharId = id;
+            saveState();
+            renderAll();
+            // Em telas mobile, fecha a sidebar ao selecionar
+            if (window.innerWidth < 1024) {
+                toggleSidebarMobile();
+            }
+        }
+
+        // Sidebar mobile toggle
+        function toggleSidebarMobile() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        }
+
+        // Sistema de Abas
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-gold', 'text-darkBg', 'shadow');
+                btn.classList.add('bg-[#1a2233]', 'text-gray-300');
+            });
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`btn-tab-${tabId}`);
+            activeBtn.classList.remove('bg-[#1a2233]', 'text-gray-300');
+            activeBtn.classList.add('bg-gold', 'text-darkBg', 'shadow');
+        }
+
+        // Renderização Geral
+        function renderAll() {
+            renderCharacterList();
+            const char = getActiveChar();
+            
+            const nameObj = char.general.find(g => g.label === 'Nome do Personagem');
+            document.getElementById('headerCharName').innerText = (nameObj && nameObj.value.trim() !== '') ? nameObj.value : 'Novo Personagem';
+
+            renderAvatar();
+            renderGeneralFields();
+            renderAttributes();
+            renderCombatStats();
+            renderDeathSaves();
+            renderSkills();
+            renderAbilities();
+            renderInventory();
+            renderBlessings();
+            renderCustomSections();
+        }
+
+        // Renderizar Lista na Sidebar
+        function renderCharacterList() {
+            const container = document.getElementById('characterList');
+            container.innerHTML = '';
+            appState.characters.forEach(char => {
+                const nameObj = char.general.find(g => g.label === 'Nome do Personagem');
+                const chaliceObj = char.general.find(g => g.label === 'Chalé / Parente Divino');
+                const name = (nameObj && nameObj.value.trim() !== '') ? nameObj.value : 'Sem Nome';
+                const chalice = (chaliceObj && chaliceObj.value.trim() !== '') ? chaliceObj.value : 'Sem Chalé';
+                const isActive = char.id === appState.activeCharId;
+
+                const div = document.createElement('div');
+                div.className = `p-3 rounded-xl border cursor-pointer transition flex items-center gap-3 ${isActive ? 'bg-[#1a2233] border-gold shadow-md' : 'bg-[#0b0e14] border-[#2a3447] hover:border-gold/50'}`;
+                div.onclick = () => switchCharacter(char.id);
+
+                div.innerHTML = `
+                    <div class="w-10 h-10 rounded-lg overflow-hidden bg-[#131924] border border-[#2a3447] flex items-center justify-center flex-shrink-0">
+                        ${char.avatar ? `<img src="${char.avatar}" class="w-full h-full object-cover">` : `<i class="fa-solid fa-user text-gold text-sm"></i>`}
+                    </div>
+                    <div class="overflow-hidden flex-grow">
+                        <h4 class="text-sm font-bold text-white truncate font-cinzel">${name}</h4>
+                        <p class="text-[11px] text-gray-400 truncate">${chalice}</p>
+                    </div>
+                    ${isActive ? '<i class="fa-solid fa-chevron-right text-gold text-xs"></i>' : ''}
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Gerenciamento de Avatar
+        function uploadAvatar(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const char = getActiveChar();
+                char.avatar = e.target.result;
+                saveState();
+                renderAvatar();
+                renderCharacterList();
+                showToast('Foto de perfil atualizada!');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeAvatar() {
+            const char = getActiveChar();
+            char.avatar = '';
+            saveState();
+            renderAvatar();
+            renderCharacterList();
+            showToast('Foto de perfil removida!');
+        }
+
+        function renderAvatar() {
+            const char = getActiveChar();
+            const headerImg = document.getElementById('headerAvatarImg');
+            const headerPlaceholder = document.getElementById('headerAvatarPlaceholder');
+            const mainImg = document.getElementById('mainAvatarImg');
+            const mainPlaceholder = document.getElementById('mainAvatarPlaceholder');
+
+            if (char.avatar) {
+                headerImg.src = char.avatar;
+                headerImg.classList.remove('hidden');
+                headerPlaceholder.classList.add('hidden');
+
+                mainImg.src = char.avatar;
+                mainImg.classList.remove('hidden');
+                mainPlaceholder.classList.add('hidden');
+            } else {
+                headerImg.src = '';
+                headerImg.classList.add('hidden');
+                headerPlaceholder.classList.remove('hidden');
+
+                mainImg.src = '';
+                mainImg.classList.add('hidden');
+                mainPlaceholder.classList.remove('hidden');
+            }
+        }
+
+        // 1. Informações Gerais
+        function renderGeneralFields() {
+            const char = getActiveChar();
+            const container = document.getElementById('generalFieldsGrid');
+            container.innerHTML = '';
+            char.general.forEach((field, index) => {
+                const div = document.createElement('div');
+                div.className = 'bg-[#0b0e14] p-3 rounded-lg border border-[#2a3447] relative group';
+                div.innerHTML = `
+                    <label class="text-[11px] uppercase tracking-wider text-gold block mb-1 font-semibold">${field.label}</label>
+                    <div class="text-sm font-medium text-white flex justify-between items-center">
+                        <span contenteditable="true" onblur="updateGeneralField(${index}, this.innerText)" class="outline-none focus:bg-[#1a2233] px-1 rounded w-full min-h-[20px]">${field.value}</span>
+                        <button onclick="removeGeneralField(${index})" class="text-gray-500 hover:text-aresRed ml-2 opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function updateGeneralField(index, val) {
+            const char = getActiveChar();
+            char.general[index].value = val;
+            saveState();
+            renderCharacterList();
+            if(index === 0) {
+                document.getElementById('headerCharName').innerText = val.trim() !== '' ? val : 'Novo Personagem';
+            }
+        }
+
+        function addGeneralField() {
+            openGenericForm("Adicionar Informação Geral", [
+                { id: 'label', label: 'Nome do Campo', type: 'text' },
+                { id: 'value', label: 'Valor', type: 'text' }
+            ], (vals) => {
+                if(vals.label) {
+                    const char = getActiveChar();
+                    char.general.push({ id: Date.now().toString(), label: vals.label, value: vals.value || '' });
+                    saveState();
+                    renderGeneralFields();
+                }
+            });
+        }
+
+        function removeGeneralField(index) {
+            const char = getActiveChar();
+            char.general.splice(index, 1);
+            saveState();
+            renderGeneralFields();
+        }
+
+        // 2. Atributos
+        function renderAttributes() {
+            const char = getActiveChar();
+            const container = document.getElementById('attributesContainer');
+            container.innerHTML = '';
+            char.attributes.forEach((attr, index) => {
+                const div = document.createElement('div');
+                div.className = 'bg-[#0b0e14] p-4 rounded-xl border border-[#2a3447] relative group';
+                div.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-cinzel font-bold text-gold text-base" contenteditable="true" onblur="updateAttributeProp(${index}, 'name', this.innerText)">${attr.name}</span>
+                        <button onclick="removeAttribute(${index})" class="text-gray-500 hover:text-aresRed opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="bg-[#1a2233] px-3 py-1.5 rounded-lg border border-[#2a3447] text-center w-16">
+                            <span class="text-xs text-gray-400 block">Valor</span>
+                            <span class="text-lg font-bold text-white outline-none" contenteditable="true" onblur="updateAttributeProp(${index}, 'value', this.innerText)">${attr.value}</span>
+                        </div>
+                        <div class="flex-grow bg-[#1a2233] px-3 py-1.5 rounded-lg border border-[#2a3447]">
+                            <span class="text-xs text-gray-400 block">Modificador</span>
+                            <span class="text-sm font-semibold text-gray-200 outline-none" contenteditable="true" onblur="updateAttributeProp(${index}, 'mod', this.innerText)">${attr.mod}</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function updateAttributeProp(index, prop, val) {
+            const char = getActiveChar();
+            char.attributes[index][prop] = val;
+            saveState();
+        }
+
+        function addAttribute() {
+            openGenericForm("Adicionar Atributo", [
+                { id: 'name', label: 'Nome do Atributo', type: 'text' },
+                { id: 'value', label: 'Valor Numérico', type: 'text' },
+                { id: 'mod', label: 'Modificador (Ex: +1d20, +2)', type: 'text' }
+            ], (vals) => {
+                if(vals.name) {
+                    const char = getActiveChar();
+                    char.attributes.push({ id: Date.now().toString(), name: vals.name, value: vals.value || '0', mod: vals.mod || '+0' });
+                    saveState();
+                    renderAttributes();
+                }
+            });
+        }
+
+        function removeAttribute(index) {
+            const char = getActiveChar();
+            char.attributes.splice(index, 1);
+            saveState();
+            renderAttributes();
+        }
+
+        // 3. Status de Combate
+        function renderCombatStats() {
+            const char = getActiveChar();
+            const container = document.getElementById('combatStatsGrid');
+            const c = char.combat;
+            container.innerHTML = `
+                <div class="bg-[#0b0e14] p-4 rounded-xl border border-[#2a3447]">
+                    <span class="text-xs text-gray-400 font-semibold uppercase block mb-1">Vida (PV)</span>
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="flex-1">
+                            <span class="text-[10px] text-gray-500">Atual</span>
+                            <input type="number" value="${c.vidaAtual}" onchange="updateCombat('vidaAtual', this.value)" class="w-full bg-[#1a2233] border border-[#2a3447] rounded px-2 py-1 text-white font-bold text-center">
+                        </div>
+                        <div class="flex-1">
+                            <span class="text-[10px] text-gray-500">Máxima</span>
+                            <input type="number" value="${c.vidaMax}" onchange="updateCombat('vidaMax', this.value)" class="w-full bg-[#1a2233] border border-[#2a3447] rounded px-2 py-1 text-white font-bold text-center">
+                        </div>
+                        <div class="flex-1">
+                            <span class="text-[10px] text-gray-500">Temp</span>
+                            <input type="number" value="${c.vidaTemp}" onchange="updateCombat('vidaTemp', this.value)" class="w-full bg-[#1a2233] border border-[#2a3447] rounded px-2 py-1 text-white font-bold text-center">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-[#0b0e14] p-4 rounded-xl border border-[#2a3447]">
+                    <span class="text-xs text-gray-400 font-semibold uppercase block mb-1">Estamina</span>
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="flex-1">
+                            <span class="text-[10px] text-gray-500">Atual</span>
+                            <input type="number" value="${c.estaminaAtual}" onchange="updateCombat('estaminaAtual', this.value)" class="w-full bg-[#1a2233] border border-[#2a3447] rounded px-2 py-1 text-white font-bold text-center">
+                        </div>
+                        <div class="flex-1">
+                            <span class="text-[10px] text-gray-500">Máxima</span>
+                            <input type="number" value="${c.estaminaMax}" onchange="updateCombat('estaminaMax', this.value)" class="w-full bg-[#1a2233] border border-[#2a3447] rounded px-2 py-1 text-white font-bold text-center">
+                        </div>
+                        <div class="flex-1">
+                            <span class="text-[10px] text-gray-500">Temp</span>
+                            <input type="number" value="${c.estaminaTemp}" onchange="updateCombat('estaminaTemp', this.value)" class="w-full bg-[#1a2233] border border-[#2a3447] rounded px-2 py-1 text-white font-bold text-center">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-[#0b0e14] p-4 rounded-xl border border-[#2a3447]">
+                    <span class="text-xs text-gray-400 font-semibold uppercase block mb-1">Redução de Dano</span>
+                    <input type="number" value="${c.reducaoDano}" onchange="updateCombat('reducaoDano', this.value)" class="w-full bg-[#1a2233] border border-[#2a3447] rounded px-2 py-2 text-white font-bold text-center text-lg mt-1">
+                </div>
+
+                <div class="bg-[#0b0e14] p-4 rounded-xl border border-[#2a3447]">
+                    <span class="text-xs text-gray-400 font-semibold uppercase block mb-1">Áspis (Armadura)</span>
+                    <input type="number" value="${c.aspis}" onchange="updateCombat('aspis', this.value)" class="w-full bg-[#1a2233] border border-[#2a3447] rounded px-2 py-2 text-white font-bold text-center text-lg mt-1">
+                </div>
+            `;
+        }
+
+        function updateCombat(field, val) {
+            const char = getActiveChar();
+            char.combat[field] = Number(val);
+            saveState();
+        }
+
+        function renderDeathSaves() {
+            const char = getActiveChar();
+            const succContainer = document.getElementById('deathSuccessContainer');
+            succContainer.innerHTML = '';
+            char.combat.morteSucessos.forEach((val, i) => {
+                succContainer.innerHTML += `
+                    <label class="flex items-center gap-2 cursor-pointer bg-[#1a2233] px-3 py-2 rounded-lg border border-[#2a3447]">
+                        <input type="checkbox" ${val ? 'checked' : ''} onchange="toggleDeathSave('morteSucessos', ${i})" class="w-4 h-4 accent-gold rounded">
+                        <span class="text-sm font-semibold">${i+1}</span>
+                    </label>
+                `;
+            });
+
+            const failContainer = document.getElementById('deathFailureContainer');
+            failContainer.innerHTML = '';
+            char.combat.morteFalhas.forEach((val, i) => {
+                failContainer.innerHTML += `
+                    <label class="flex items-center gap-2 cursor-pointer bg-[#1a2233] px-3 py-2 rounded-lg border border-[#2a3447]">
+                        <input type="checkbox" ${val ? 'checked' : ''} onchange="toggleDeathSave('morteFalhas', ${i})" class="w-4 h-4 accent-aresRed rounded">
+                        <span class="text-sm font-semibold">${i+1}</span>
+                    </label>
+                `;
+            });
+        }
+
+        function toggleDeathSave(type, index) {
+            const char = getActiveChar();
+            char.combat[type][index] = !char.combat[type][index];
+            saveState();
+        }
+
+        // 4. Perícias
+        function renderSkills() {
+            const char = getActiveChar();
+            const container = document.getElementById('skillsContainer');
+            container.innerHTML = '';
+            if(char.skills.length === 0) {
+                container.innerHTML = `<p class="text-xs text-gray-500 italic col-span-full">Nenhuma perícia adicionada ainda. Clique em "Adicionar Perícia".</p>`;
+                return;
+            }
+            char.skills.forEach((skill, index) => {
+                const div = document.createElement('div');
+                div.className = 'bg-[#0b0e14] p-3 rounded-lg border border-[#2a3447] flex justify-between items-center group';
+                div.innerHTML = `
+                    <span class="text-sm font-medium text-white outline-none" contenteditable="true" onblur="updateSkill(${index}, this.innerText)">${skill}</span>
+                    <button onclick="removeSkill(${index})" class="text-gray-500 hover:text-aresRed opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-trash"></i></button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function updateSkill(index, val) {
+            const char = getActiveChar();
+            char.skills[index] = val;
+            saveState();
+        }
+
+        function addSkill() {
+            openGenericForm("Adicionar Perícia", [
+                { id: 'name', label: 'Nome da Perícia', type: 'text' }
+            ], (vals) => {
+                if(vals.name) {
+                    const char = getActiveChar();
+                    char.skills.push(vals.name);
+                    saveState();
+                    renderSkills();
+                }
+            });
+        }
+
+        function removeSkill(index) {
+            const char = getActiveChar();
+            char.skills.splice(index, 1);
+            saveState();
+            renderSkills();
+        }
+
+        // 5. Habilidades & Passivas
+        function renderAbilities() {
+            const char = getActiveChar();
+            const container = document.getElementById('abilitiesContainer');
+            container.innerHTML = '';
+            if(char.abilities.length === 0) {
+                container.innerHTML = `<p class="text-xs text-gray-500 italic">Nenhuma habilidade ou passiva cadastrada ainda.</p>`;
+                return;
+            }
+            char.abilities.forEach((ab, index) => {
+                const div = document.createElement('div');
+                div.className = 'bg-[#131924] border border-[#2a3447] rounded-xl p-5 shadow-lg relative group';
+                div.innerHTML = `
+                    <div class="flex flex-wrap justify-between items-start gap-2 mb-3 pb-2 border-b border-[#2a3447]">
+                        <div>
+                            <span class="text-xs px-2 py-0.5 rounded bg-gold/20 text-gold font-semibold uppercase mb-1 inline-block" contenteditable="true" onblur="updateAbilityProp(${index}, 'type', this.innerText)">${ab.type}</span>
+                            <h3 class="text-lg font-bold text-white outline-none" contenteditable="true" onblur="updateAbilityProp(${index}, 'title', this.innerText)">${ab.title}</h3>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-400 outline-none" contenteditable="true" onblur="updateAbilityProp(${index}, 'details', this.innerText)">${ab.details}</span>
+                            <button onclick="removeAbility(${index})" class="text-gray-500 hover:text-aresRed transition ml-2"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-300 whitespace-pre-line outline-none" contenteditable="true" onblur="updateAbilityProp(${index}, 'effect', this.innerText)">${ab.effect}</p>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function updateAbilityProp(index, prop, val) {
+            const char = getActiveChar();
+            char.abilities[index][prop] = val;
+            saveState();
+        }
+
+        function addAbilityModal() {
+            openGenericForm("Adicionar Habilidade / Passiva", [
+                { id: 'title', label: 'Título', type: 'text' },
+                { id: 'type', label: 'Tipo (Ex: Habilidade Ativa, Passiva)', type: 'text' },
+                { id: 'details', label: 'Detalhes (Custo, Duração, Cooldown)', type: 'text' },
+                { id: 'effect', label: 'Descrição / Efeito', type: 'textarea' }
+            ], (vals) => {
+                if(vals.title) {
+                    const char = getActiveChar();
+                    char.abilities.push({
+                        id: Date.now().toString(),
+                        title: vals.title,
+                        type: vals.type || 'Habilidade',
+                        details: vals.details || '',
+                        effect: vals.effect || ''
+                    });
+                    saveState();
+                    renderAbilities();
+                }
+            });
+        }
+
+        function removeAbility(index) {
+            const char = getActiveChar();
+            char.abilities.splice(index, 1);
+            saveState();
+            renderAbilities();
+        }
+
+        // 6. Inventário
+        function renderInventory() {
+            const char = getActiveChar();
+            const container = document.getElementById('inventoryContainer');
+            container.innerHTML = '';
+            if(char.inventory.length === 0) {
+                container.innerHTML = `<p class="text-xs text-gray-500 italic col-span-full">Inventário vazio.</p>`;
+                return;
+            }
+            char.inventory.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'bg-[#0b0e14] p-4 rounded-xl border border-[#2a3447] flex items-center justify-between group';
+                div.innerHTML = `
+                    <div class="flex items-center gap-3 flex-grow">
+                        <i class="fa-solid fa-box text-gold"></i>
+                        <span class="text-sm font-medium text-white w-full outline-none" contenteditable="true" onblur="updateInventoryItem(${index}, this.innerText)">${item.name}</span>
+                    </div>
+                    <button onclick="removeInventoryItem(${index})" class="text-gray-500 hover:text-aresRed opacity-0 group-hover:opacity-100 transition ml-2"><i class="fa-solid fa-trash"></i></button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function updateInventoryItem(index, val) {
+            const char = getActiveChar();
+            char.inventory[index].name = val;
+            saveState();
+        }
+
+        function addInventoryItem() {
+            openGenericForm("Adicionar Item ao Inventário", [
+                { id: 'name', label: 'Nome do Item ou Espaço Vazio', type: 'text' }
+            ], (vals) => {
+                if(vals.name) {
+                    const char = getActiveChar();
+                    char.inventory.push({ id: Date.now().toString(), name: vals.name, equipped: false });
+                    saveState();
+                    renderInventory();
+                }
+            });
+        }
+
+        function removeInventoryItem(index) {
+            const char = getActiveChar();
+            char.inventory.splice(index, 1);
+            saveState();
+            renderInventory();
+        }
+
+        // 7. Bênçãos & Fardos
+        function renderBlessings() {
+            const char = getActiveChar();
+            const container = document.getElementById('blessingsContainer');
+            container.innerHTML = '';
+            if(char.blessings.length === 0) {
+                container.innerHTML = `<p class="text-xs text-gray-500 italic col-span-full">Nenhuma bênção ou fardo registrado.</p>`;
+                return;
+            }
+            char.blessings.forEach((bles, index) => {
+                const div = document.createElement('div');
+                div.className = 'bg-[#131924] border border-[#2a3447] rounded-xl p-5 shadow-lg relative group';
+                div.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-base font-bold text-gold outline-none" contenteditable="true" onblur="updateBlessing(${index}, 'name', this.innerText)">${bles.name}</h3>
+                        <button onclick="removeBlessing(${index})" class="text-gray-500 hover:text-aresRed opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                    <p class="text-sm text-gray-300 outline-none" contenteditable="true" onblur="updateBlessing(${index}, 'desc', this.innerText)">${bles.desc}</p>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function updateBlessing(index, prop, val) {
+            const char = getActiveChar();
+            char.blessings[index][prop] = val;
+            saveState();
+        }
+
+        function addBlessingModal() {
+            openGenericForm("Adicionar Bênção ou Fardo", [
+                { id: 'name', label: 'Título (Ex: Nome (Bênção / Fardo))', type: 'text' },
+                { id: 'desc', label: 'Descrição', type: 'textarea' }
+            ], (vals) => {
+                if(vals.name) {
+                    const char = getActiveChar();
+                    char.blessings.push({ id: Date.now().toString(), name: vals.name, desc: vals.desc || '' });
+                    saveState();
+                    renderBlessings();
+                }
+            });
+        }
+
+        function removeBlessing(index) {
+            const char = getActiveChar();
+            char.blessings.splice(index, 1);
+            saveState();
+            renderBlessings();
+        }
+
+        // 8. Seções Personalizadas Extras
+        function renderCustomSections() {
+            const char = getActiveChar();
+            const container = document.getElementById('customSectionsContainer');
+            container.innerHTML = '';
+            if(char.customSections.length === 0) {
+                container.innerHTML = `<p class="text-xs text-gray-500 italic">Nenhuma seção personalizada criada. Clique em "Criar Nova Seção".</p>`;
+                return;
+            }
+            char.customSections.forEach((sec, sIndex) => {
+                const div = document.createElement('div');
+                div.className = 'bg-[#131924] border border-[#2a3447] rounded-xl p-5 shadow-lg relative';
+                let itemsHtml = '';
+                if(sec.items.length === 0) {
+                    itemsHtml = `<p class="text-xs text-gray-500 italic col-span-full">Seção vazia.</p>`;
+                } else {
+                    sec.items.forEach((item, iIndex) => {
+                        itemsHtml += `
+                            <div class="bg-[#0b0e14] p-3 rounded-lg border border-[#2a3447] flex justify-between items-center group">
+                                <div>
+                                    <span class="text-xs text-gold block font-semibold outline-none" contenteditable="true" onblur="updateCustomItem(${sIndex}, ${iIndex}, 'label', this.innerText)">${item.label}</span>
+                                    <span class="text-sm text-white outline-none" contenteditable="true" onblur="updateCustomItem(${sIndex}, ${iIndex}, 'value', this.innerText)">${item.value}</span>
+                                </div>
+                                <button onclick="removeCustomItem(${sIndex}, ${iIndex})" class="text-gray-500 hover:text-aresRed opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        `;
+                    });
+                }
+
+                div.innerHTML = `
+                    <div class="flex justify-between items-center mb-4 pb-2 border-b border-[#2a3447]">
+                        <h3 class="text-lg font-bold text-gold outline-none" contenteditable="true" onblur="updateCustomSectionTitle(${sIndex}, this.innerText)">${sec.title}</h3>
+                        <div class="flex items-center gap-2">
+                            <button onclick="addCustomSectionItem(${sIndex})" class="text-xs bg-gold/20 hover:bg-gold/30 text-gold px-2.5 py-1 rounded-md font-medium transition flex items-center gap-1">
+                                <i class="fa-solid fa-plus"></i> Adicionar Item
+                            </button>
+                            <button onclick="removeCustomSection(${sIndex})" class="text-gray-400 hover:text-aresRed transition"><i class="fa-solid fa-trash"></i> Excluir Seção</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        ${itemsHtml}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function addCustomSection() {
+            openGenericForm("Criar Nova Seção Personalizada", [
+                { id: 'title', label: 'Título da Seção (Ex: Companheiros, Notas)', type: 'text' }
+            ], (vals) => {
+                if(vals.title) {
+                    const char = getActiveChar();
+                    char.customSections.push({ id: Date.now().toString(), title: vals.title, items: [] });
+                    saveState();
+                    renderCustomSections();
+                }
+            });
+        }
+
+        function updateCustomSectionTitle(sIndex, val) {
+            const char = getActiveChar();
+            char.customSections[sIndex].title = val;
+            saveState();
+        }
+
+        function removeCustomSection(sIndex) {
+            const char = getActiveChar();
+            char.customSections.splice(sIndex, 1);
+            saveState();
+            renderCustomSections();
+        }
+
+        function addCustomSectionItem(sIndex) {
+            openGenericForm("Adicionar Item na Seção", [
+                { id: 'label', label: 'Rótulo / Nome', type: 'text' },
+                { id: 'value', label: 'Valor / Descrição', type: 'text' }
+            ], (vals) => {
+                if(vals.label) {
+                    const char = getActiveChar();
+                    char.customSections[sIndex].items.push({ id: Date.now().toString(), label: vals.label, value: vals.value || '' });
+                    saveState();
+                    renderCustomSections();
+                }
+            });
+        }
+
+        function updateCustomItem(sIndex, iIndex, prop, val) {
+            const char = getActiveChar();
+            char.customSections[sIndex].items[iIndex][prop] = val;
+            saveState();
+        }
+
+        function removeCustomItem(sIndex, iIndex) {
+            const char = getActiveChar();
+            char.customSections[sIndex].items.splice(iIndex, 1);
+            saveState();
+            renderCustomSections();
+        }
+
+        // Sistema de Rolador de Dados
+        function openDiceModal() {
+            document.getElementById('diceModal').classList.remove('hidden');
+        }
+
+        function closeDiceModal() {
+            document.getElementById('diceModal').classList.add('hidden');
+        }
+
+        function rollDice(sides) {
+            const mod = parseInt(document.getElementById('diceModifier').value) || 0;
+            const roll = Math.floor(Math.random() * sides) + 1;
+            const total = roll + mod;
+            document.getElementById('diceResult').innerText = total;
+            document.getElementById('diceLog').innerText = `Rolagem: d${sides} (${roll}) ${mod >= 0 ? '+' : ''}${mod} = ${total}`;
+        }
+
+        function rollCustomDice() {
+            const customSides = prompt("Digite o número de faces do dado personalizado (Ex: 24):", "20");
+            if(customSides && !isNaN(customSides)) {
+                rollDice(parseInt(customSides));
+            }
+        }
+
+        // Sistema de Modal Genérico
+        let currentModalCallback = null;
+        function openGenericForm(title, fields, callback) {
+            document.getElementById('modalTitle').innerText = title;
+            const body = document.getElementById('modalBody');
+            body.innerHTML = '';
+            fields.forEach(f => {
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <label class="text-xs text-gray-400 block mb-1 font-semibold">${f.label}</label>
+                    ${f.type === 'textarea' 
+                        ? `<textarea id="modal_field_${f.id}" class="w-full bg-[#0b0e14] border border-[#2a3447] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-gold h-24"></textarea>`
+                        : `<input type="${f.type}" id="modal_field_${f.id}" class="w-full bg-[#0b0e14] border border-[#2a3447] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-gold">`
+                    }
+                `;
+                body.appendChild(div);
+            });
+            currentModalCallback = () => {
+                const vals = {};
+                fields.forEach(f => {
+                    vals[f.id] = document.getElementById(`modal_field_${f.id}`).value;
+                });
+                callback(vals);
+                closeGenericModal();
+            };
+            document.getElementById('modalConfirmBtn').onclick = currentModalCallback;
+            document.getElementById('genericModal').classList.remove('hidden');
+        }
+
+        function closeGenericModal() {
+            document.getElementById('genericModal').classList.add('hidden');
+            currentModalCallback = null;
+        }
+
+        // Exportar e Importar Personagem Atual ou Todos
+        function exportCurrentJSON() {
+            const char = getActiveChar();
+            const nameObj = char.general.find(g => g.label === 'Nome do Personagem');
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(char, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `ficha_${nameObj?.value.toLowerCase().replace(/\s+/g, '_') || 'personagem'}.json`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+            showToast('Ficha exportada com sucesso!');
+        }
+
+        function exportAllJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `todos_personagens_filhos_do_destino.json`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+            showToast('Todas as fichas exportadas com sucesso!');
+        }
+
+        function importAllJSON(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    // Suporta formato de múltiplos personagens ou formato antigo de 1 personagem
+                    if (parsed.characters && Array.isArray(parsed.characters)) {
+                        appState = parsed;
+                    } else if (parsed.general && Array.isArray(parsed.general)) {
+                        // Formato de um único personagem importado
+                        appState.characters.push(parsed);
+                        appState.activeCharId = parsed.id || appState.characters[appState.characters.length - 1].id;
+                    } else {
+                        throw new Error("Formato inválido");
+                    }
+                    saveState();
+                    renderAll();
+                    showToast('Dados importados com sucesso!');
+                } catch(err) {
+                    showToast('Erro ao importar arquivo JSON!');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Toast de notificação
+        function showToast(message) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'bg-[#131924] border border-gold text-gold px-4 py-3 rounded-xl shadow-2xl text-sm font-semibold flex items-center gap-3 animate-fade-in';
+            toast.innerHTML = `<i class="fa-solid fa-circle-check text-gold"></i> ${message}`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Inicializar na carga
+        window.onload = function() {
+            loadState();
+        };
+    </script>
+</body>
+</html>
